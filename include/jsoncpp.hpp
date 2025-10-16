@@ -82,13 +82,27 @@ public:
   }
 };
 
-template <> class transform<bool> {
+template <>
+class transform<bool> {
 public:
   static void trans(const bj::value &jv, bool &t) {
     if (jv.is_string()) {
       std::string fv = jv.as_string().c_str();
       if (!fv.empty()) {
-        t = fv == "true" ? true : false;
+        // 支持多种真值表示
+        if (fv == "true" || fv == "1" || fv == "yes" || fv == "on") {
+          t = true;
+        } else if (fv == "false" || fv == "0" || fv == "no" || fv == "off") {
+          t = false;
+        } else {
+          // 对于其他字符串，尝试转换为数字再判断
+          try {
+            int num = std::stoi(fv);
+            t = num != 0;
+          } catch (const std::exception&) {
+            t = false; // 转换失败则返回false
+          }
+        }
       } else {
         t = false;
       }
